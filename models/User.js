@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-const {Schema,model} from "mongoose";
+import bcryptjs from "bcryptjs";
 
-const schema = new Schema({
+const userSchema = new mongoose.Schema({
     email:{
         type: 'string',
         required: true,
@@ -10,10 +10,29 @@ const schema = new Schema({
         lowercase: true,
         index: { unique: true },
     },
-    password{
+    password:{
         type: 'string',
         required: true,
     },
+});
+
+userSchema.pre("save",async function(next){
+    const user = this;
+
+    if(user.isModified('password')) return next();
+
+    try{
+       const salt = bcryptjs.gensalt(10)
+        user.password = await bcryptjs.hash(user.password,salt)
+       next()
+    } catch(error){
+        console.log(error)
+        throw new Error('Falló el hash de contraseña')
+    }
 })
 
-export const User = model('user',userSchema)
+userSchema.methods.comparePassword = async function(candidatePassword){
+    return await bcryptjs.compare(candidatePassword, this.password);
+} 
+
+export const User = mongoose.model('user',userSchema)
