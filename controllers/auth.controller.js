@@ -1,5 +1,6 @@
 import { User } from '../models/User.js'
-
+import jwt from 'jsonwebtoken'
+import { generateToken } from '../utils/tokenManager.js';
 
 export const register = async (req, res) => {
     const { email, password } = req.body
@@ -13,16 +14,27 @@ export const register = async (req, res) => {
 }
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body
+        const { email, password } = req.body;
         let user = await User.findOne({email});
-        if(!user) return res.status(403).json({error:'No existe el usuario'});
+        if(!user) 
+            return res.status(403).json({error:'No existe el usuario'});
 
-        const respuestaPassword = await user.comparePassword(password)
+        const respuestaPassword = await user.comparePassword(password);
         if (!respuestaPassword)
-        return res.status(403).json({error:'Contraseña incorrecta'});
-        return res.json({ok:"login"});
+            return res.status(403).json({error:'Contraseña incorrecta'});
+
+        // Generar el token JWT
+        const {token, expiresIn} = generateToken(user.id);
+        return res.json({token, expiresIn });
     } catch (error) {
         console.log(error)
         return res.status(500).json({error:'Error de servidor'});
     }
-}
+};
+
+export const infoUser = async (req, res) => {
+    try {
+        const user = await user.findById(req.uid)
+        return res.json({user});
+    } catch (error) {}
+};
